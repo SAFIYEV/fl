@@ -203,8 +203,9 @@
     </div>
     <div id="shop">
         <h1 id="shopTitle">Shop</h1>
-        <p id="coinsLabel">Coins: <span id="shopCoins">0</span></p>
+        <p id="skinsLabel">Skins</p>
         <div id="skins"></div>
+        <p id="balanceLabel">Balance: <span id="shopCoins">0</span> Coins</p>
         <button id="backShopButton" onclick="closeShop()">Back</button>
     </div>
     <div id="missions">
@@ -240,6 +241,8 @@
         const skinsDiv = document.getElementById('skins');
         const missionList = document.getElementById('missionList');
         const shopCoins = document.getElementById('shopCoins');
+        const skinsLabel = document.getElementById('skinsLabel');
+        const balanceLabel = document.getElementById('balanceLabel');
         const levelDisplay = document.getElementById('levelDisplay');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const coinsDisplay = document.getElementById('coinsDisplay');
@@ -311,6 +314,8 @@
                 claimTicketsCooldown: 'Claim in ',
                 resetProgressButton: 'Reset Progress',
                 shopTitle: 'Shop',
+                skinsLabel: 'Skins',
+                balanceLabel: 'Balance',
                 coinsLabel: 'Coins',
                 ticketsLabel: 'Tickets',
                 backShopButton: 'Back',
@@ -337,6 +342,7 @@
                 ],
                 reward: 'Reward',
                 purchaseSuccess: 'Purchased: ',
+                selectSuccess: 'Selected: ',
                 notEnoughCoins: 'Not enough coins!',
                 ticketsClaimed: 'Claimed 10 tickets!',
                 ticketsReset: 'Tickets reset due to overflow',
@@ -352,6 +358,8 @@
                 claimTicketsCooldown: 'Забрать через ',
                 resetProgressButton: 'Сбросить Прогресс',
                 shopTitle: 'Магазин',
+                skinsLabel: 'Скины',
+                balanceLabel: 'Баланс',
                 coinsLabel: 'Монеты',
                 ticketsLabel: 'Билетики',
                 backShopButton: 'Назад',
@@ -378,6 +386,7 @@
                 ],
                 reward: 'Награда',
                 purchaseSuccess: 'Куплено: ',
+                selectSuccess: 'Выбрано: ',
                 notEnoughCoins: 'Недостаточно монет!',
                 ticketsClaimed: 'Получено 10 билетиков!',
                 ticketsReset: 'Билетики сброшены из-за переполнения',
@@ -393,6 +402,8 @@
                 claimTicketsCooldown: 'あとで受け取る ',
                 resetProgressButton: '進捗をリセット',
                 shopTitle: 'ショップ',
+                skinsLabel: 'スキン',
+                balanceLabel: '残高',
                 coinsLabel: 'コイン',
                 ticketsLabel: 'チケット',
                 backShopButton: '戻る',
@@ -419,6 +430,7 @@
                 ],
                 reward: '報酬',
                 purchaseSuccess: '購入済み：',
+                selectSuccess: '選択済み：',
                 notEnoughCoins: 'コインが不足しています！',
                 ticketsClaimed: '10チケットを受け取りました！',
                 ticketsReset: 'チケットがオーバーフローによりリセットされました',
@@ -569,7 +581,8 @@
             document.getElementById('scoreDisplay').textContent = `${t.scoreDisplay}: ${score}`;
             document.getElementById('coinsDisplay').textContent = `${t.coinsDisplay}: ${coinsCollected}`;
             document.getElementById('ticketsDisplay').textContent = `${t.ticketsDisplay}: ${tickets}`;
-            document.getElementById('coinsLabel').textContent = `${t.coinsLabel}: `;
+            skinsLabel.textContent = t.skinsLabel;
+            balanceLabel.textContent = `${t.balanceLabel}: ${coinsCollected} ${t.coinsLabel}`;
             document.getElementById('missionsTitle').textContent = t.missionsTitle;
             document.getElementById('gameOverTitle').textContent = t.gameOverTitle;
             document.getElementById('finalScore').textContent = `${t.finalScore}: ${score}`;
@@ -662,28 +675,37 @@
                 const name = document.createElement('p');
                 name.textContent = skin.name;
                 skinDiv.appendChild(name);
-                const price = document.createElement('p');
-                price.textContent = skin.owned ? 'Owned' : skin.price > 0 ? `${skin.price} ${translations[language].coinsLabel}` : 'Free';
-                skinDiv.appendChild(price);
-                skinDiv.onclick = () => {
-                    if (skin.owned) {
+                const action = document.createElement('p');
+                if (skin.owned) {
+                    action.textContent = player.skin === skin.id ? 'Selected' : 'Select';
+                    action.onclick = () => {
+                        if (!skin.owned) return;
                         player.skin = skin.id;
-                        renderShop();
-                        saveGame();
-                    } else if (coinsCollected >= skin.price) {
-                        coinsCollected -= skin.price;
-                        skin.owned = true;
-                        player.skin = skin.id;
-                        skinDiv.classList.add('purchased');
+                        showNotification(`${translations[language].selectSuccess}${skin.name}`);
                         navigator.vibrate?.(50);
-                        showNotification(`${translations[language].purchaseSuccess}${skin.name}`);
                         renderShop();
-                        updateDisplays();
                         saveGame();
-                    } else {
-                        showNotification(translations[language].notEnoughCoins);
-                    }
-                };
+                    };
+                } else {
+                    action.textContent = skin.price > 0 ? `${skin.price} ${translations[language].coinsLabel}` : 'Free';
+                    action.onclick = () => {
+                        if (skin.owned) return;
+                        if (coinsCollected >= skin.price) {
+                            coinsCollected -= skin.price;
+                            skin.owned = true;
+                            player.skin = skin.id;
+                            skinDiv.classList.add('purchased');
+                            navigator.vibrate?.(50);
+                            showNotification(`${translations[language].purchaseSuccess}${skin.name}`);
+                            renderShop();
+                            updateDisplays();
+                            saveGame();
+                        } else {
+                            showNotification(translations[language].notEnoughCoins);
+                        }
+                    };
+                }
+                skinDiv.appendChild(action);
                 skinsDiv.appendChild(skinDiv);
             });
         }
@@ -749,6 +771,7 @@
             document.getElementById('finalLevel').textContent = `${translations[language].finalLevel}: ${level}`;
             document.getElementById('earnedCoins').textContent = `${translations[language].earnedCoins}: ${coinsCollected}`;
             document.getElementById('remainingTickets').textContent = `${translations[language].remainingTickets}: ${tickets}`;
+            balanceLabel.textContent = `${translations[language].balanceLabel}: ${coinsCollected} ${translations[language].coinsLabel}`;
         }
 
         function gameLoop() {
