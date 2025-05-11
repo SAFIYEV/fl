@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flappy Circle</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -99,44 +100,30 @@
         .skin.selected img {
             border-color: #FFD700;
         }
-        #levelDisplay, #scoreDisplay, #coinsDisplay {
+        #levelDisplay, #scoreDisplay, #coinsDisplay, #ticketsDisplay {
             position: absolute;
             font-size: 18px;
             font-weight: bold;
             transition: color 0.3s;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-        .light-theme #levelDisplay, .light-theme #scoreDisplay, .light-theme #coinsDisplay {
+        .light-theme #levelDisplay, .light-theme #scoreDisplay, .light-theme #coinsDisplay, .light-theme #ticketsDisplay {
             color: #FFF;
         }
-        .dark-theme #levelDisplay, .dark-theme #scoreDisplay, .dark-theme #coinsDisplay {
+        .dark-theme #levelDisplay, .dark-theme #scoreDisplay, .dark-theme #coinsDisplay, .dark-theme #ticketsDisplay {
             color: #E0E0E0;
         }
-        #levelDisplay {
-            top: 15px;
-            left: 15px;
-        }
-        #scoreDisplay {
-            top: 40px;
-            left: 15px;
-        }
-        #coinsDisplay {
-            top: 65px;
-            left: 15px;
-        }
+        #levelDisplay { top: 15px; left: 15px; }
+        #scoreDisplay { top: 40px; left: 15px; }
+        #coinsDisplay { top: 65px; left: 15px; }
+        #ticketsDisplay { top: 90px; left: 15px; }
         #themeToggle, #languageToggle {
             position: absolute;
             padding: 10px 20px;
             font-size: 14px;
         }
-        #themeToggle {
-            top: 15px;
-            right: 15px;
-        }
-        #languageToggle {
-            top: 60px;
-            right: 15px;
-        }
+        #themeToggle { top: 15px; right: 15px; }
+        #languageToggle { top: 60px; right: 15px; }
         #missions ul {
             list-style: none;
             padding: 0;
@@ -149,23 +136,21 @@
             font-size: 15px;
             transition: background-color 0.3s;
         }
-        .light-theme #missions li {
-            background: #B3E5FC;
-        }
-        .dark-theme #missions li {
-            background: #616161;
-        }
-        .light-theme #missions li.completed {
-            background: #4CAF50;
-            color: #FFF;
-        }
-        .dark-theme #missions li.completed {
-            background: #388E3C;
-            color: #E0E0E0;
+        .light-theme #missions li { background: #B3E5FC; }
+        .dark-theme #missions li { background: #616161; }
+        .light-theme #missions li.completed { background: #4CAF50; color: #FFF; }
+        .dark-theme #missions li.completed { background: #388E3C; color: #E0E0E0; }
+        .wallet-button {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
         }
     </style>
 </head>
 <body class="light-theme">
+    <div class="wallet-button" id="ton-connect"></div>
     <canvas id="gameCanvas" width="360" height="640"></canvas>
     <div id="menu">
         <h1 id="gameTitle">Flappy Circle</h1>
@@ -187,6 +172,7 @@
     <div id="levelDisplay">Level: 1</div>
     <div id="scoreDisplay">Score: 0</div>
     <div id="coinsDisplay">Coins: 0</div>
+    <div id="ticketsDisplay">Tickets: 0</div>
     <button id="themeToggle" onclick="toggleTheme()">Dark Theme</button>
     <button id="languageToggle" onclick="toggleLanguage()">English</button>
 
@@ -202,12 +188,19 @@
         const levelDisplay = document.getElementById('levelDisplay');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const coinsDisplay = document.getElementById('coinsDisplay');
+        const ticketsDisplay = document.getElementById('ticketsDisplay');
         const themeToggle = document.getElementById('themeToggle');
         const languageToggle = document.getElementById('languageToggle');
 
+        // TON Connect
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://safiyev.github.io/manigest/manifest.json',
+            buttonRootId: 'ton-connect'
+        });
+
         let player = {
             x: 80,
-            y: canvas.height / 2,
+            y: 0,
             radius: 20,
             velocity: 0,
             gravity: 0.7,
@@ -220,6 +213,8 @@
         let coins = [];
         let score = 0;
         let coinsCollected = 0;
+        let tickets = 0;
+        let lastTicketTime = 0;
         let level = 1;
         let gameSpeed = 4;
         let gameState = 'menu';
@@ -227,16 +222,25 @@
         let maxLevel = 50;
         let theme = 'light';
         let language = 'en';
+        let startDelay = 120; // 2 seconds at 60 FPS
 
         const skins = [
-            { id: 'skin1', src: 'https://via.placeholder.com/50/FF5722', price: 0, owned: true, name: 'Default' },
-            { id: 'skin2', src: 'https://via.placeholder.com/50/4CAF50', price: 0, owned: true, name: 'Gift' },
-            { id: 'skin3', src: 'https://via.placeholder.com/50/2196F3', price: 1500, owned: false, name: 'Skyward' },
-            { id: 'skin4', src: 'https://via.placeholder.com/50/F44336', price: 7500, owned: false, name: 'Crimson' },
-            { id: 'skin5', src: 'https://via.placeholder.com/50/FFC107', price: 15000, owned: false, name: 'Aurora' },
-            { id: 'skin6', src: 'https://via.placeholder.com/50/9C27B0', price: 75000, owned: false, name: 'Nebula' },
-            { id: 'skin7', src: 'https://via.placeholder.com/50/FFD700', price: 1000000, owned: false, name: 'Mythic' }
+            { id: 'skin1', src: 'https://via.placeholder.com/50/FF5722', price: 0, owned: true, name: 'Default', color: '#FF5722' },
+            { id: 'skin2', src: 'https://via.placeholder.com/50/4CAF50', price: 0, owned: true, name: 'Gift', color: '#4CAF50' },
+            { id: 'skin3', src: 'https://via.placeholder.com/50/2196F3', price: 1500, owned: false, name: 'Skyward', color: '#2196F3' },
+            { id: 'skin4', src: 'https://via.placeholder.com/50/F44336', price: 7500, owned: false, name: 'Crimson', color: '#F44336' },
+            { id: 'skin5', src: 'https://via.placeholder.com/50/FFC107', price: 15000, owned: false, name: 'Aurora', color: '#FFC107' },
+            { id: 'skin6', src: 'https://via.placeholder.com/50/9C27B0', price: 75000, owned: false, name: 'Nebula', color: '#9C27B0' },
+            { id: 'skin7', src: 'https://via.placeholder.com/50/FFD700', price: 1000000, owned: false, name: 'Mythic', color: '#FFD700' }
         ];
+
+        // Preload skin images
+        const skinImages = {};
+        skins.forEach(skin => {
+            skinImages[skin.id] = new Image();
+            skinImages[skin.id].src = skin.src;
+            skinImages[skin.id].onerror = () => { skinImages[skin.id].src = 'https://via.placeholder.com/50/CCCCCC'; };
+        });
 
         const translations = {
             en: {
@@ -246,12 +250,14 @@
                 missionsButton: 'Missions',
                 shopTitle: 'Shop',
                 coinsLabel: 'Coins',
+                ticketsLabel: 'Tickets',
                 backShopButton: 'Back',
                 missionsTitle: 'Missions',
                 backMissionsButton: 'Back',
                 levelDisplay: 'Level',
                 scoreDisplay: 'Score',
                 coinsDisplay: 'Coins',
+                ticketsDisplay: 'Tickets',
                 themeToggleLight: 'Dark Theme',
                 themeToggleDark: 'Light Theme',
                 missions: [
@@ -268,12 +274,14 @@
                 missionsButton: 'Миссии',
                 shopTitle: 'Магазин',
                 coinsLabel: 'Монеты',
+                ticketsLabel: 'Билетики',
                 backShopButton: 'Назад',
                 missionsTitle: 'Миссии',
                 backMissionsButton: 'Назад',
                 levelDisplay: 'Уровень',
                 scoreDisplay: 'Очки',
                 coinsDisplay: 'Монеты',
+                ticketsDisplay: 'Билетики',
                 themeToggleLight: 'Темная Тема',
                 themeToggleDark: 'Светлая Тема',
                 missions: [
@@ -290,12 +298,14 @@
                 missionsButton: 'ミッション',
                 shopTitle: 'ショップ',
                 coinsLabel: 'コイン',
+                ticketsLabel: 'チケット',
                 backShopButton: '戻る',
                 missionsTitle: 'ミッション',
                 backMissionsButton: '戻る',
                 levelDisplay: 'レベル',
                 scoreDisplay: 'スコア',
                 coinsDisplay: 'コイン',
+                ticketsDisplay: 'チケット',
                 themeToggleLight: 'ダークテーマ',
                 themeToggleDark: 'ライトテーマ',
                 missions: [
@@ -312,6 +322,49 @@
             { id: 2, target: 30, reward: 200, progress: 0, completed: false },
             { id: 3, target: 20, reward: 300, progress: 0, completed: false }
         ];
+
+        // Load game state
+        function loadGame() {
+            const savedState = localStorage.getItem('flappyCircleState');
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                coinsCollected = parsed.coinsCollected || 0;
+                tickets = parsed.tickets || 0;
+                lastTicketTime = parsed.lastTicketTime || 0;
+                skins.forEach(skin => {
+                    const savedSkin = parsed.skins?.find(s => s.id === skin.id);
+                    if (savedSkin) {
+                        skin.owned = savedSkin.owned;
+                        if (savedSkin.owned && skin.id === parsed.playerSkin) player.skin = skin.id;
+                    }
+                });
+            }
+            updateTickets();
+        }
+
+        // Save game state
+        function saveGame() {
+            const state = {
+                coinsCollected,
+                tickets,
+                lastTicketTime,
+                playerSkin: player.skin,
+                skins: skins.map(skin => ({ id: skin.id, owned: skin.owned }))
+            };
+            localStorage.setItem('flappyCircleState', JSON.stringify(state));
+        }
+
+        // Update tickets (every 3 hours)
+        function updateTickets() {
+            const now = Date.now();
+            const ticketInterval = 10800 * 1000; // 3 hours in ms
+            if (now - lastTicketTime >= ticketInterval) {
+                tickets += Math.floor((now - lastTicketTime) / ticketInterval);
+                lastTicketTime = now - ((now - lastTicketTime) % ticketInterval);
+                saveGame();
+            }
+            ticketsDisplay.textContent = `${translations[language].ticketsDisplay}: ${tickets}`;
+        }
 
         function toggleTheme() {
             theme = theme === 'light' ? 'dark' : 'light';
@@ -334,6 +387,7 @@
             document.getElementById('levelDisplay').textContent = `${t.levelDisplay}: ${level}`;
             document.getElementById('scoreDisplay').textContent = `${t.scoreDisplay}: ${score}`;
             document.getElementById('coinsDisplay').textContent = `${t.coinsDisplay}: ${coinsCollected}`;
+            document.getElementById('ticketsDisplay').textContent = `${t.ticketsDisplay}: ${tickets}`;
             document.getElementById('coinsLabel').textContent = `${t.coinsLabel}: `;
             document.getElementById('missionsTitle').textContent = t.missionsTitle;
             document.getElementById('backShopButton').textContent = t.backShopButton;
@@ -347,6 +401,7 @@
         function startGame() {
             gameState = 'playing';
             menu.style.display = 'none';
+            player.x = 80;
             player.y = canvas.height / 2;
             player.velocity = 0;
             player.scale = 1;
@@ -356,6 +411,7 @@
             level = 1;
             gameSpeed = 4;
             frame = 0;
+            startDelay = 120; // 2 seconds delay
             updateDisplays();
             gameLoop();
         }
@@ -395,7 +451,7 @@
                 if (player.skin === skin.id) skinDiv.classList.add('selected');
                 const img = document.createElement('img');
                 img.src = skin.src;
-                img.onerror = () => { img.src = 'https://via.placeholder.com/50/CCCCCC'; }; // Fallback if image fails
+                img.onerror = () => { img.src = 'https://via.placeholder.com/50/CCCCCC'; };
                 skinDiv.appendChild(img);
                 const name = document.createElement('p');
                 name.textContent = skin.name;
@@ -409,12 +465,14 @@
                     if (skin.owned) {
                         player.skin = skin.id;
                         renderShop();
+                        saveGame();
                     } else if (coinsCollected >= skin.price) {
                         coinsCollected -= skin.price;
                         skin.owned = true;
                         player.skin = skin.id;
                         renderShop();
                         updateDisplays();
+                        saveGame();
                     }
                 };
                 skinsDiv.appendChild(skinDiv);
@@ -447,6 +505,7 @@
                     mission.progress = mission.id === 1 ? score : mission.id === 2 ? coinsCollected : level;
                 }
             });
+            saveGame();
         }
 
         function spawnObstacle() {
@@ -475,6 +534,7 @@
             levelDisplay.textContent = `${translations[language].levelDisplay}: ${level}`;
             scoreDisplay.textContent = `${translations[language].scoreDisplay}: ${score}`;
             coinsDisplay.textContent = `${translations[language].coinsDisplay}: ${coinsCollected}`;
+            ticketsDisplay.textContent = `${translations[language].ticketsDisplay}: ${tickets}`;
         }
 
         function gameLoop() {
@@ -482,12 +542,16 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Update tickets
+            updateTickets();
+
             // Player movement
             player.velocity += player.gravity * (1 + level * 0.015);
             player.y += player.velocity;
             if (player.y + player.radius > canvas.height || player.y - player.radius < 0) {
                 gameState = 'menu';
                 menu.style.display = 'block';
+                saveGame();
             }
 
             // Player animation
@@ -496,19 +560,22 @@
 
             // Draw player
             const skin = skins.find(s => s.id === player.skin);
-            const img = new Image();
-            img.src = skin.src;
-            img.onerror = () => { img.src = 'https://via.placeholder.com/50/CCCCCC'; };
+            const img = skinImages[skin.id];
             ctx.save();
             ctx.beginPath();
             ctx.arc(player.x, player.y, player.radius * player.scale, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(img, player.x - player.radius * player.scale, player.y - player.radius * player.scale, player.radius * 2 * player.scale, player.radius * 2 * player.scale);
+            if (img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, player.x - player.radius * player.scale, player.y - player.radius * player.scale, player.radius * 2 * player.scale, player.radius * 2 * player.scale);
+            } else {
+                ctx.fillStyle = skin.color;
+                ctx.fill();
+            }
             ctx.restore();
 
             // Obstacles
             const obstacleFrequency = Math.max(70 - level * 2, 40);
-            if (frame % obstacleFrequency === 0) spawnObstacle();
+            if (startDelay <= 0 && frame % obstacleFrequency === 0) spawnObstacle();
             obstacles.forEach(obstacle => {
                 obstacle.x -= gameSpeed;
                 const gradient = ctx.createLinearGradient(obstacle.x, 0, obstacle.x + obstacle.width, 0);
@@ -526,6 +593,7 @@
                 ) {
                     gameState = 'menu';
                     menu.style.display = 'block';
+                    saveGame();
                 }
 
                 if (obstacle.x + obstacle.width < player.x && !obstacle.passed) {
@@ -542,7 +610,7 @@
 
             // Coins
             const coinFrequency = Math.max(100 - level * 2, 60);
-            if (frame % coinFrequency === 0) spawnCoin();
+            if (startDelay <= 0 && frame % coinFrequency === 0) spawnCoin();
             coins.forEach(coin => {
                 coin.x -= gameSpeed;
                 coin.angle += 0.1;
@@ -565,6 +633,7 @@
                     coinsCollected += 2 + Math.floor(level / 5);
                     coins = coins.filter(c => c !== coin);
                     updateDisplays();
+                    saveGame();
                 }
             });
             coins = coins.filter(coin => coin.x + coin.radius > 0);
@@ -572,6 +641,7 @@
             // Update missions
             updateMissions();
 
+            if (startDelay > 0) startDelay--;
             frame++;
             requestAnimationFrame(gameLoop);
         }
@@ -585,8 +655,12 @@
         });
 
         // Initialize
-        menu.style.display = 'block';
-        updateUIText();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGame();
+            menu.style.display = 'block';
+            updateUIText();
+            setInterval(updateTickets, 60000); // Check tickets every minute
+        });
     </script>
 </body>
 </html>
