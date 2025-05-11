@@ -37,7 +37,7 @@
         .dark-theme #gameCanvas {
             background: #2D2D2D;
         }
-        #menu, #shop, #missions {
+        #menu, #shop, #missions, #gameOver {
             position: absolute;
             padding: 15px;
             border-radius: 12px;
@@ -48,15 +48,15 @@
             transition: background-color 0.3s, color 0.3s;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        .light-theme #menu, .light-theme #shop, .light-theme #missions {
+        .light-theme #menu, .light-theme #shop, .light-theme #missions, .light-theme #gameOver {
             background: rgba(255, 255, 255, 0.97);
             color: #222;
         }
-        .dark-theme #menu, .dark-theme #shop, .dark-theme #missions {
+        .dark-theme #menu, .light-theme #shop, .dark-theme #missions, .dark-theme #gameOver {
             background: rgba(50, 50, 50, 0.97);
             color: #E0E0E0;
         }
-        #menu h1, #shop h1, #missions h1 {
+        #menu h1, #shop h1, #missions h1, #gameOver h1 {
             margin: 0 0 15px;
             font-size: 24px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
@@ -194,6 +194,8 @@
         <button id="startButton" onclick="startGame()">Start Game</button>
         <button id="shopButton" onclick="openShop()">Shop</button>
         <button id="missionsButton" onclick="openMissions()">Missions</button>
+        <button id="claimTicketsButton" onclick="claimTickets()">Claim Tickets</button>
+        <button id="resetProgressButton" onclick="resetProgress()">Reset Progress</button>
     </div>
     <div id="shop">
         <h1 id="shopTitle">Shop</h1>
@@ -205,6 +207,15 @@
         <h1 id="missionsTitle">Missions</h1>
         <ul id="missionList"></ul>
         <button id="backMissionsButton" onclick="closeMissions()">Back</button>
+    </div>
+    <div id="gameOver">
+        <h1 id="gameOverTitle">Game Over</h1>
+        <p id="finalScore">Score: 0</p>
+        <p id="bestScore">Best Score: 0</p>
+        <p id="finalLevel">Level: 1</p>
+        <p id="earnedCoins">Earned Coins: 0</p>
+        <button id="restartButton" onclick="startGame()">Restart</button>
+        <button id="backToMenuButton" onclick="backToMenu()">Menu</button>
     </div>
     <div id="levelDisplay">Level: 1</div>
     <div id="scoreDisplay">Score: 0</div>
@@ -220,6 +231,7 @@
         const menu = document.getElementById('menu');
         const shop = document.getElementById('shop');
         const missions = document.getElementById('missions');
+        const gameOver = document.getElementById('gameOver');
         const skinsDiv = document.getElementById('skins');
         const missionList = document.getElementById('missionList');
         const shopCoins = document.getElementById('shopCoins');
@@ -229,6 +241,7 @@
         const ticketsDisplay = document.getElementById('ticketsDisplay');
         const themeToggle = document.getElementById('themeToggle');
         const languageToggle = document.getElementById('languageToggle');
+        const claimTicketsButton = document.getElementById('claimTicketsButton');
         const notification = document.getElementById('notification');
 
         // TON Connect
@@ -242,8 +255,8 @@
             y: 0,
             radius: 20,
             velocity: 0,
-            gravity: 0.7,
-            jump: -13,
+            gravity: 0.35,
+            jump: -14,
             skin: 'skin1',
             scale: 1
         };
@@ -251,9 +264,10 @@
         let obstacles = [];
         let coins = [];
         let score = 0;
+        let bestScore = 0;
         let coinsCollected = 0;
         let tickets = 0;
-        let lastTicketTime = 0;
+        let lastTicketClaimTime = 0;
         let level = 1;
         let gameSpeed = 4;
         let gameState = 'menu';
@@ -287,12 +301,22 @@
                 startButton: 'Start Game',
                 shopButton: 'Shop',
                 missionsButton: 'Missions',
+                claimTicketsButton: 'Claim Tickets',
+                claimTicketsCooldown: 'Claim in ',
+                resetProgressButton: 'Reset Progress',
                 shopTitle: 'Shop',
                 coinsLabel: 'Coins',
                 ticketsLabel: 'Tickets',
                 backShopButton: 'Back',
                 missionsTitle: 'Missions',
                 backMissionsButton: 'Back',
+                gameOverTitle: 'Game Over',
+                finalScore: 'Score',
+                bestScore: 'Best Score',
+                finalLevel: 'Level',
+                earnedCoins: 'Earned Coins',
+                restartButton: 'Restart',
+                backToMenuButton: 'Menu',
                 levelDisplay: 'Level',
                 scoreDisplay: 'Score',
                 coinsDisplay: 'Coins',
@@ -306,19 +330,32 @@
                 ],
                 reward: 'Reward',
                 purchaseSuccess: 'Purchased: ',
-                notEnoughCoins: 'Not enough coins!'
+                notEnoughCoins: 'Not enough coins!',
+                ticketsClaimed: 'Claimed 10 tickets!',
+                ticketsReset: 'Tickets reset due to overflow',
+                progressReset: 'Progress reset'
             },
             ru: {
                 gameTitle: 'Летающий Круг',
                 startButton: 'Начать Игру',
                 shopButton: 'Магазин',
                 missionsButton: 'Миссии',
+                claimTicketsButton: 'Забрать Билетики',
+                claimTicketsCooldown: 'Забрать через ',
+                resetProgressButton: 'Сбросить Прогресс',
                 shopTitle: 'Магазин',
                 coinsLabel: 'Монеты',
                 ticketsLabel: 'Билетики',
                 backShopButton: 'Назад',
                 missionsTitle: 'Миссии',
                 backMissionsButton: 'Назад',
+                gameOverTitle: 'Игра Окончена',
+                finalScore: 'Очки',
+                bestScore: 'Лучший Счёт',
+                finalLevel: 'Уровень',
+                earnedCoins: 'Заработано Монет',
+                restartButton: 'Рестарт',
+                backToMenuButton: 'Меню',
                 levelDisplay: 'Уровень',
                 scoreDisplay: 'Очки',
                 coinsDisplay: 'Монеты',
@@ -332,19 +369,32 @@
                 ],
                 reward: 'Награда',
                 purchaseSuccess: 'Куплено: ',
-                notEnoughCoins: 'Недостаточно монет!'
+                notEnoughCoins: 'Недостаточно монет!',
+                ticketsClaimed: 'Получено 10 билетиков!',
+                ticketsReset: 'Билетики сброшены из-за переполнения',
+                progressReset: 'Прогресс сброшен'
             },
             ja: {
                 gameTitle: 'フラッピーサークル',
                 startButton: 'ゲーム開始',
                 shopButton: 'ショップ',
                 missionsButton: 'ミッション',
+                claimTicketsButton: 'チケットを受け取る',
+                claimTicketsCooldown: 'あとで受け取る ',
+                resetProgressButton: '進捗をリセット',
                 shopTitle: 'ショップ',
                 coinsLabel: 'コイン',
                 ticketsLabel: 'チケット',
                 backShopButton: '戻る',
                 missionsTitle: 'ミッション',
                 backMissionsButton: '戻る',
+                gameOverTitle: 'ゲームオーバー',
+                finalScore: 'スコア',
+                bestScore: '最高スコア',
+                finalLevel: 'レベル',
+                earnedCoins: '獲得コイン',
+                restartButton: 'リスタート',
+                backToMenuButton: 'メニュー',
                 levelDisplay: 'レベル',
                 scoreDisplay: 'スコア',
                 coinsDisplay: 'コイン',
@@ -358,7 +408,10 @@
                 ],
                 reward: '報酬',
                 purchaseSuccess: '購入済み：',
-                notEnoughCoins: 'コインが不足しています！'
+                notEnoughCoins: 'コインが不足しています！',
+                ticketsClaimed: '10チケットを受け取りました！',
+                ticketsReset: 'チケットがオーバーフローによりリセットされました',
+                progressReset: '進捗がリセットされました'
             }
         };
 
@@ -372,19 +425,29 @@
         function loadGame() {
             const savedState = localStorage.getItem('flappyCircleState');
             if (savedState) {
-                const parsed = JSON.parse(savedState);
-                coinsCollected = parsed.coinsCollected || 0;
-                tickets = parsed.tickets || 0;
-                lastTicketTime = parsed.lastTicketTime || 0;
-                skins.forEach(skin => {
-                    const savedSkin = parsed.skins?.find(s => s.id === skin.id);
-                    if (savedSkin) {
-                        skin.owned = savedSkin.owned;
-                        if (savedSkin.owned && skin.id === parsed.playerSkin) player.skin = skin.id;
+                try {
+                    const parsed = JSON.parse(savedState);
+                    coinsCollected = parsed.coinsCollected || 0;
+                    tickets = parsed.tickets || 0;
+                    bestScore = parsed.bestScore || 0;
+                    lastTicketClaimTime = parsed.lastTicketClaimTime || 0;
+                    if (tickets > 1000) {
+                        tickets = 0;
+                        lastTicketClaimTime = Date.now();
+                        showNotification(translations[language].ticketsReset);
                     }
-                });
+                    skins.forEach(skin => {
+                        const savedSkin = parsed.skins?.find(s => s.id === skin.id);
+                        if (savedSkin) {
+                            skin.owned = savedSkin.owned;
+                            if (savedSkin.owned && skin.id === parsed.playerSkin) player.skin = skin.id;
+                        }
+                    });
+                } catch (e) {
+                    resetProgress();
+                }
             }
-            updateTickets();
+            updateClaimButton();
         }
 
         // Save game state
@@ -392,7 +455,8 @@
             const state = {
                 coinsCollected,
                 tickets,
-                lastTicketTime,
+                bestScore,
+                lastTicketClaimTime,
                 playerSkin: player.skin,
                 skins: skins.map(skin => ({ id: skin.id, owned: skin.owned }))
             };
@@ -409,17 +473,58 @@
             }, 3000);
         }
 
-        // Update tickets (every 3 hours)
-        function updateTickets() {
+        // Format time for cooldown
+        function formatCooldown(ms) {
+            const hours = Math.floor(ms / 3600000);
+            const minutes = Math.floor((ms % 3600000) / 60000);
+            return `${hours}h ${minutes}m`;
+        }
+
+        // Update claim tickets button
+        function updateClaimButton() {
             const now = Date.now();
             const ticketInterval = 10800 * 1000; // 3 hours in ms
-            if (now - lastTicketTime >= ticketInterval) {
-                tickets += Math.floor((now - lastTicketTime) / ticketInterval);
-                lastTicketTime = now - ((now - lastTicketTime) % ticketInterval);
-                showNotification(`+${Math.floor((now - lastTicketTime) / ticketInterval) + 1} ${translations[language].ticketsLabel}`);
-                saveGame();
+            const timeSinceLastClaim = now - lastTicketClaimTime;
+            if (timeSinceLastClaim >= ticketInterval) {
+                claimTicketsButton.textContent = translations[language].claimTicketsButton;
+                claimTicketsButton.disabled = false;
+            } else {
+                const timeLeft = ticketInterval - timeSinceLastClaim;
+                claimTicketsButton.textContent = `${translations[language].claimTicketsCooldown}${formatCooldown(timeLeft)}`;
+                claimTicketsButton.disabled = true;
             }
             ticketsDisplay.textContent = `${translations[language].ticketsDisplay}: ${tickets}`;
+        }
+
+        // Claim tickets
+        function claimTickets() {
+            const now = Date.now();
+            const ticketInterval = 10800 * 1000; // 3 hours in ms
+            if (now - lastTicketClaimTime >= ticketInterval) {
+                tickets += 10;
+                lastTicketClaimTime = now;
+                showNotification(translations[language].ticketsClaimed);
+                navigator.vibrate?.(50);
+                saveGame();
+                updateClaimButton();
+            }
+        }
+
+        // Reset progress
+        function resetProgress() {
+            coinsCollected = 0;
+            tickets = 0;
+            bestScore = 0;
+            lastTicketClaimTime = Date.now();
+            player.skin = 'skin1';
+            skins.forEach(skin => {
+                skin.owned = skin.price === 0;
+            });
+            showNotification(translations[language].progressReset);
+            saveGame();
+            updateDisplays();
+            renderShop();
+            updateClaimButton();
         }
 
         function toggleTheme() {
@@ -439,6 +544,7 @@
             document.getElementById('startButton').textContent = t.startButton;
             document.getElementById('shopButton').textContent = t.shopButton;
             document.getElementById('missionsButton').textContent = t.missionsButton;
+            document.getElementById('resetProgressButton').textContent = t.resetProgressButton;
             document.getElementById('shopTitle').textContent = t.shopTitle;
             document.getElementById('levelDisplay').textContent = `${t.levelDisplay}: ${level}`;
             document.getElementById('scoreDisplay').textContent = `${t.scoreDisplay}: ${score}`;
@@ -446,10 +552,18 @@
             document.getElementById('ticketsDisplay').textContent = `${t.ticketsDisplay}: ${tickets}`;
             document.getElementById('coinsLabel').textContent = `${t.coinsLabel}: `;
             document.getElementById('missionsTitle').textContent = t.missionsTitle;
+            document.getElementById('gameOverTitle').textContent = t.gameOverTitle;
+            document.getElementById('finalScore').textContent = `${t.finalScore}: ${score}`;
+            document.getElementById('bestScore').textContent = `${t.bestScore}: ${bestScore}`;
+            document.getElementById('finalLevel').textContent = `${t.finalLevel}: ${level}`;
+            document.getElementById('earnedCoins').textContent = `${t.earnedCoins}: ${coinsCollected}`;
+            document.getElementById('restartButton').textContent = t.restartButton;
+            document.getElementById('backToMenuButton').textContent = t.backToMenuButton;
             document.getElementById('backShopButton').textContent = t.backShopButton;
             document.getElementById('backMissionsButton').textContent = t.backMissionsButton;
             themeToggle.textContent = theme === 'light' ? t.themeToggleLight : t.themeToggleDark;
             languageToggle.textContent = language === 'en' ? 'Русский' : language === 'ru' ? '日本語' : 'English';
+            updateClaimButton();
             renderMissions();
             renderShop();
         }
@@ -457,6 +571,7 @@
         function startGame() {
             gameState = 'playing';
             menu.style.display = 'none';
+            gameOver.style.display = 'none';
             player.x = 80;
             player.y = canvas.height / 2;
             player.velocity = 0;
@@ -470,6 +585,12 @@
             startDelay = 120; // 2 seconds delay
             updateDisplays();
             gameLoop();
+        }
+
+        function backToMenu() {
+            gameState = 'menu';
+            gameOver.style.display = 'none';
+            menu.style.display = 'block';
         }
 
         function openShop() {
@@ -525,6 +646,7 @@
                         skin.owned = true;
                         player.skin = skin.id;
                         skinDiv.classList.add('purchased');
+                        navigator.vibrate?.(50);
                         showNotification(`${translations[language].purchaseSuccess}${skin.name}`);
                         renderShop();
                         updateDisplays();
@@ -567,7 +689,7 @@
         }
 
         function spawnObstacle() {
-            const baseGap = Math.max(110 - level * 2.5, 70);
+            const baseGap = Math.max(160 - level * 0.5, 120);
             const height = Math.random() * (canvas.height - baseGap - 120) + 60;
             const width = 40 + Math.random() * 20 + level * 3;
             obstacles.push({
@@ -593,6 +715,10 @@
             scoreDisplay.textContent = `${translations[language].scoreDisplay}: ${score}`;
             coinsDisplay.textContent = `${translations[language].coinsDisplay}: ${coinsCollected}`;
             ticketsDisplay.textContent = `${translations[language].ticketsDisplay}: ${tickets}`;
+            document.getElementById('finalScore').textContent = `${translations[language].finalScore}: ${score}`;
+            document.getElementById('bestScore').textContent = `${translations[language].bestScore}: ${bestScore}`;
+            document.getElementById('finalLevel').textContent = `${translations[language].finalLevel}: ${level}`;
+            document.getElementById('earnedCoins').textContent = `${translations[language].earnedCoins}: ${coinsCollected}`;
         }
 
         function gameLoop() {
@@ -600,15 +726,14 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update tickets
-            updateTickets();
-
             // Player movement
-            player.velocity += player.gravity * (1 + level * 0.015);
+            player.velocity += player.gravity;
             player.y += player.velocity;
             if (player.y + player.radius > canvas.height || player.y - player.radius < 0) {
-                gameState = 'menu';
-                menu.style.display = 'block';
+                if (score > bestScore) bestScore = score;
+                gameState = 'gameOver';
+                gameOver.style.display = 'block';
+                updateDisplays();
                 saveGame();
             }
 
@@ -632,7 +757,7 @@
             ctx.restore();
 
             // Obstacles
-            const obstacleFrequency = Math.max(70 - level * 2, 40);
+            const obstacleFrequency = Math.max(110 - level * 0.5, 80);
             if (startDelay <= 0 && frame % obstacleFrequency === 0) spawnObstacle();
             obstacles.forEach(obstacle => {
                 obstacle.x -= gameSpeed;
@@ -649,8 +774,10 @@
                     player.x - player.radius * player.scale < obstacle.x + obstacle.width &&
                     (player.y - player.radius * player.scale < obstacle.topHeight || player.y + player.radius * player.scale > canvas.height - obstacle.bottomHeight)
                 ) {
-                    gameState = 'menu';
-                    menu.style.display = 'block';
+                    if (score > bestScore) bestScore = score;
+                    gameState = 'gameOver';
+                    gameOver.style.display = 'block';
+                    updateDisplays();
                     saveGame();
                 }
 
@@ -659,7 +786,7 @@
                     obstacle.passed = true;
                     if (score % 80 === 0 && level < maxLevel) {
                         level++;
-                        gameSpeed += 0.4;
+                        gameSpeed += 0.05;
                     }
                     updateDisplays();
                 }
@@ -689,6 +816,7 @@
                     Math.hypot(player.x - coin.x, player.y - coin.y) < player.radius * player.scale + coin.radius
                 ) {
                     coinsCollected += 2 + Math.floor(level / 5);
+                    navigator.vibrate?.(50);
                     coins = coins.filter(c => c !== coin);
                     updateDisplays();
                     saveGame();
@@ -709,6 +837,7 @@
             if (gameState === 'playing') {
                 player.velocity = player.jump;
                 player.scale = 1.2;
+                navigator.vibrate?.(50);
             }
         });
 
@@ -717,7 +846,7 @@
             loadGame();
             menu.style.display = 'block';
             updateUIText();
-            setInterval(updateTickets, 60000); // Check tickets every minute
+            setInterval(updateClaimButton, 1000); // Update button every second
         });
     </script>
 </body>
