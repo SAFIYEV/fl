@@ -52,7 +52,7 @@
             background: rgba(255, 255, 255, 0.97);
             color: #222;
         }
-        .dark-theme #menu, .light-theme #shop, .dark-theme #missions, .dark-theme #gameOver {
+        .dark-theme #menu, .dark-theme #shop, .dark-theme #missions, .dark-theme #gameOver {
             background: rgba(50, 50, 50, 0.97);
             color: #E0E0E0;
         }
@@ -80,6 +80,10 @@
         }
         button:hover {
             transform: scale(1.05);
+        }
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
         }
         .skin {
             display: inline-block;
@@ -214,6 +218,7 @@
         <p id="bestScore">Best Score: 0</p>
         <p id="finalLevel">Level: 1</p>
         <p id="earnedCoins">Earned Coins: 0</p>
+        <p id="remainingTickets">Tickets: 0</p>
         <button id="restartButton" onclick="startGame()">Restart</button>
         <button id="backToMenuButton" onclick="backToMenu()">Menu</button>
     </div>
@@ -242,6 +247,7 @@
         const themeToggle = document.getElementById('themeToggle');
         const languageToggle = document.getElementById('languageToggle');
         const claimTicketsButton = document.getElementById('claimTicketsButton');
+        const startButton = document.getElementById('startButton');
         const notification = document.getElementById('notification');
 
         // TON Connect
@@ -255,8 +261,8 @@
             y: 0,
             radius: 20,
             velocity: 0,
-            gravity: 0.35,
-            jump: -14,
+            gravity: 0.3,
+            jump: -15,
             skin: 'skin1',
             scale: 1
         };
@@ -315,6 +321,7 @@
                 bestScore: 'Best Score',
                 finalLevel: 'Level',
                 earnedCoins: 'Earned Coins',
+                remainingTickets: 'Tickets',
                 restartButton: 'Restart',
                 backToMenuButton: 'Menu',
                 levelDisplay: 'Level',
@@ -333,7 +340,8 @@
                 notEnoughCoins: 'Not enough coins!',
                 ticketsClaimed: 'Claimed 10 tickets!',
                 ticketsReset: 'Tickets reset due to overflow',
-                progressReset: 'Progress reset'
+                progressReset: 'Progress reset',
+                noTickets: 'No tickets! Claim more or wait.'
             },
             ru: {
                 gameTitle: 'Летающий Круг',
@@ -354,6 +362,7 @@
                 bestScore: 'Лучший Счёт',
                 finalLevel: 'Уровень',
                 earnedCoins: 'Заработано Монет',
+                remainingTickets: 'Билетики',
                 restartButton: 'Рестарт',
                 backToMenuButton: 'Меню',
                 levelDisplay: 'Уровень',
@@ -372,7 +381,8 @@
                 notEnoughCoins: 'Недостаточно монет!',
                 ticketsClaimed: 'Получено 10 билетиков!',
                 ticketsReset: 'Билетики сброшены из-за переполнения',
-                progressReset: 'Прогресс сброшен'
+                progressReset: 'Прогресс сброшен',
+                noTickets: 'Нет билетиков! Получи больше или жди.'
             },
             ja: {
                 gameTitle: 'フラッピーサークル',
@@ -393,6 +403,7 @@
                 bestScore: '最高スコア',
                 finalLevel: 'レベル',
                 earnedCoins: '獲得コイン',
+                remainingTickets: 'チケット',
                 restartButton: 'リスタート',
                 backToMenuButton: 'メニュー',
                 levelDisplay: 'レベル',
@@ -411,7 +422,8 @@
                 notEnoughCoins: 'コインが不足しています！',
                 ticketsClaimed: '10チケットを受け取りました！',
                 ticketsReset: 'チケットがオーバーフローによりリセットされました',
-                progressReset: '進捗がリセットされました'
+                progressReset: '進捗がリセットされました',
+                noTickets: 'チケットがありません！もっと受け取るか待ってください。'
             }
         };
 
@@ -448,6 +460,7 @@
                 }
             }
             updateClaimButton();
+            updateStartButton();
         }
 
         // Save game state
@@ -494,6 +507,12 @@
                 claimTicketsButton.disabled = true;
             }
             ticketsDisplay.textContent = `${translations[language].ticketsDisplay}: ${tickets}`;
+            updateStartButton();
+        }
+
+        // Update start button
+        function updateStartButton() {
+            startButton.disabled = tickets < 1;
         }
 
         // Claim tickets
@@ -557,6 +576,7 @@
             document.getElementById('bestScore').textContent = `${t.bestScore}: ${bestScore}`;
             document.getElementById('finalLevel').textContent = `${t.finalLevel}: ${level}`;
             document.getElementById('earnedCoins').textContent = `${t.earnedCoins}: ${coinsCollected}`;
+            document.getElementById('remainingTickets').textContent = `${t.remainingTickets}: ${tickets}`;
             document.getElementById('restartButton').textContent = t.restartButton;
             document.getElementById('backToMenuButton').textContent = t.backToMenuButton;
             document.getElementById('backShopButton').textContent = t.backShopButton;
@@ -569,6 +589,11 @@
         }
 
         function startGame() {
+            if (tickets < 1) {
+                showNotification(translations[language].noTickets);
+                return;
+            }
+            tickets--;
             gameState = 'playing';
             menu.style.display = 'none';
             gameOver.style.display = 'none';
@@ -584,6 +609,7 @@
             frame = 0;
             startDelay = 120; // 2 seconds delay
             updateDisplays();
+            saveGame();
             gameLoop();
         }
 
@@ -591,6 +617,7 @@
             gameState = 'menu';
             gameOver.style.display = 'none';
             menu.style.display = 'block';
+            updateStartButton();
         }
 
         function openShop() {
@@ -604,6 +631,7 @@
             gameState = 'menu';
             shop.style.display = 'none';
             menu.style.display = 'block';
+            updateStartButton();
         }
 
         function openMissions() {
@@ -617,6 +645,7 @@
             gameState = 'menu';
             missions.style.display = 'none';
             menu.style.display = 'block';
+            updateStartButton();
         }
 
         function renderShop() {
@@ -689,7 +718,7 @@
         }
 
         function spawnObstacle() {
-            const baseGap = Math.max(160 - level * 0.5, 120);
+            const baseGap = Math.max(170 - level * 0.3, 130);
             const height = Math.random() * (canvas.height - baseGap - 120) + 60;
             const width = 40 + Math.random() * 20 + level * 3;
             obstacles.push({
@@ -719,6 +748,7 @@
             document.getElementById('bestScore').textContent = `${translations[language].bestScore}: ${bestScore}`;
             document.getElementById('finalLevel').textContent = `${translations[language].finalLevel}: ${level}`;
             document.getElementById('earnedCoins').textContent = `${translations[language].earnedCoins}: ${coinsCollected}`;
+            document.getElementById('remainingTickets').textContent = `${translations[language].remainingTickets}: ${tickets}`;
         }
 
         function gameLoop() {
@@ -757,7 +787,7 @@
             ctx.restore();
 
             // Obstacles
-            const obstacleFrequency = Math.max(110 - level * 0.5, 80);
+            const obstacleFrequency = Math.max(120 - level * 0.3, 90);
             if (startDelay <= 0 && frame % obstacleFrequency === 0) spawnObstacle();
             obstacles.forEach(obstacle => {
                 obstacle.x -= gameSpeed;
@@ -786,7 +816,7 @@
                     obstacle.passed = true;
                     if (score % 80 === 0 && level < maxLevel) {
                         level++;
-                        gameSpeed += 0.05;
+                        gameSpeed += 0.03;
                     }
                     updateDisplays();
                 }
