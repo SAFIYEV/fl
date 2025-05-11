@@ -16,119 +16,126 @@
             transition: background-color 0.3s;
         }
         .light-theme {
-            background-color: #E3F2FD;
+            background: linear-gradient(180deg, #B3E5FC, #4FC3F7);
         }
         .dark-theme {
-            background-color: #121212;
+            background: linear-gradient(180deg, #212121, #424242);
         }
         #gameCanvas {
-            border: 2px solid #333;
+            border: 3px solid #333;
             width: 100%;
             height: 100%;
             max-width: 360px;
             max-height: 640px;
             transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .light-theme #gameCanvas {
-            background-color: #BBDEFB;
+            background: #E1F5FE;
         }
         .dark-theme #gameCanvas {
-            background-color: #1E1E1E;
+            background: #2D2D2D;
         }
         #menu, #shop, #missions {
             position: absolute;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 15px;
             text-align: center;
             display: none;
-            width: 80%;
-            max-width: 320px;
+            width: 85%;
+            max-width: 340px;
             transition: background-color 0.3s, color 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         .light-theme #menu, .light-theme #shop, .light-theme #missions {
-            background: rgba(255, 255, 255, 0.95);
-            color: #333;
+            background: rgba(255, 255, 255, 0.97);
+            color: #222;
         }
         .dark-theme #menu, .dark-theme #shop, .dark-theme #missions {
-            background: rgba(33, 33, 33, 0.95);
+            background: rgba(50, 50, 50, 0.97);
             color: #E0E0E0;
         }
         #menu h1, #shop h1, #missions h1 {
-            margin: 0 0 15px;
-            font-size: 24px;
+            margin: 0 0 20px;
+            font-size: 28px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         button {
-            padding: 12px 24px;
-            margin: 8px;
+            padding: 12px 28px;
+            margin: 10px;
             cursor: pointer;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
-            transition: background-color 0.3s;
+            transition: transform 0.2s, background-color 0.3s;
         }
         .light-theme button {
-            background: #1976D2;
+            background: linear-gradient(45deg, #0288D1, #4FC3F7);
             color: #FFFFFF;
         }
         .dark-theme button {
-            background: #0288D1;
+            background: linear-gradient(45deg, #0277BD, #0288D1);
             color: #E0E0E0;
         }
         button:hover {
-            opacity: 0.9;
+            transform: scale(1.05);
         }
         .skin {
             display: inline-block;
-            margin: 8px;
+            margin: 10px;
             cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .skin:hover {
+            transform: scale(1.1);
         }
         .skin img {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            border: 2px solid transparent;
+            border: 3px solid transparent;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .skin.selected img {
             border-color: #FFD700;
         }
         #levelDisplay, #scoreDisplay, #coinsDisplay {
             position: absolute;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             transition: color 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         .light-theme #levelDisplay, .light-theme #scoreDisplay, .light-theme #coinsDisplay {
-            color: #FFFFFF;
-            text-shadow: 1px 1px 2px #1976D2;
+            color: #FFF;
         }
         .dark-theme #levelDisplay, .dark-theme #scoreDisplay, .dark-theme #coinsDisplay {
             color: #E0E0E0;
-            text-shadow: 1px 1px 2px #0288D1;
         }
         #levelDisplay {
-            top: 10px;
-            left: 10px;
+            top: 15px;
+            left: 15px;
         }
         #scoreDisplay {
-            top: 35px;
-            left: 10px;
+            top: 40px;
+            left: 15px;
         }
         #coinsDisplay {
-            top: 60px;
-            left: 10px;
+            top: 65px;
+            left: 15px;
         }
         #themeToggle, #languageToggle {
             position: absolute;
-            padding: 8px 16px;
+            padding: 10px 20px;
             font-size: 14px;
         }
         #themeToggle {
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
         }
         #languageToggle {
-            top: 50px;
-            right: 10px;
+            top: 60px;
+            right: 15px;
         }
         #missions ul {
             list-style: none;
@@ -136,22 +143,25 @@
             margin: 0;
         }
         #missions li {
-            margin: 8px 0;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: background-color 0.3s;
         }
         .light-theme #missions li {
-            background: #E3F2FD;
+            background: #B3E5FC;
         }
         .dark-theme #missions li {
-            background: #424242;
+            background: #616161;
         }
         .light-theme #missions li.completed {
-            background: #81C784;
+            background: #4CAF50;
+            color: #FFF;
         }
         .dark-theme #missions li.completed {
-            background: #4CAF50;
+            background: #388E3C;
+            color: #E0E0E0;
         }
     </style>
 </head>
@@ -200,9 +210,10 @@
             y: canvas.height / 2,
             radius: 20,
             velocity: 0,
-            gravity: 0.6,
-            jump: -12,
-            skin: 'skin1'
+            gravity: 0.7,
+            jump: -13,
+            skin: 'skin1',
+            scale: 1
         };
 
         let obstacles = [];
@@ -210,7 +221,7 @@
         let score = 0;
         let coinsCollected = 0;
         let level = 1;
-        let gameSpeed = 3;
+        let gameSpeed = 4;
         let gameState = 'menu';
         let frame = 0;
         let maxLevel = 50;
@@ -218,13 +229,13 @@
         let language = 'en';
 
         const skins = [
-            { id: 'skin1', src: 'skin1.png', price: 0, owned: true, name: 'Default' },
-            { id: 'skin2', src: 'skin2.png', price: 0, owned: true, name: 'Gift' },
-            { id: 'skin3', src: 'skin3.png', price: 1500, owned: false, name: 'Skyward' },
-            { id: 'skin4', src: 'skin4.png', price: 7500, owned: false, name: 'Crimson' },
-            { id: 'skin5', src: 'skin5.png', price: 15000, owned: false, name: 'Aurora' },
-            { id: 'skin6', src: 'skin6.png', price: 75000, owned: false, name: 'Nebula' },
-            { id: 'skin7', src: 'skin7.png', price: 1000000, owned: false, name: 'Mythic' }
+            { id: 'skin1', src: 'https://via.placeholder.com/50/FF5722', price: 0, owned: true, name: 'Default' },
+            { id: 'skin2', src: 'https://via.placeholder.com/50/4CAF50', price: 0, owned: true, name: 'Gift' },
+            { id: 'skin3', src: 'https://via.placeholder.com/50/2196F3', price: 1500, owned: false, name: 'Skyward' },
+            { id: 'skin4', src: 'https://via.placeholder.com/50/F44336', price: 7500, owned: false, name: 'Crimson' },
+            { id: 'skin5', src: 'https://via.placeholder.com/50/FFC107', price: 15000, owned: false, name: 'Aurora' },
+            { id: 'skin6', src: 'https://via.placeholder.com/50/9C27B0', price: 75000, owned: false, name: 'Nebula' },
+            { id: 'skin7', src: 'https://via.placeholder.com/50/FFD700', price: 1000000, owned: false, name: 'Mythic' }
         ];
 
         const translations = {
@@ -244,10 +255,11 @@
                 themeToggleLight: 'Dark Theme',
                 themeToggleDark: 'Light Theme',
                 missions: [
-                    'Reach score 200',
-                    'Collect 20 coins',
-                    'Complete level 15'
-                ]
+                    'Reach score 300',
+                    'Collect 30 coins',
+                    'Complete level 20'
+                ],
+                reward: 'Reward'
             },
             ru: {
                 gameTitle: 'Летающий Круг',
@@ -265,10 +277,11 @@
                 themeToggleLight: 'Темная Тема',
                 themeToggleDark: 'Светлая Тема',
                 missions: [
-                    'Набрать 200 очков',
-                    'Собрать 20 монет',
-                    'Завершить 15-й уровень'
-                ]
+                    'Набрать 300 очков',
+                    'Собрать 30 монет',
+                    'Завершить 20-й уровень'
+                ],
+                reward: 'Награда'
             },
             ja: {
                 gameTitle: 'フラッピーサークル',
@@ -286,17 +299,18 @@
                 themeToggleLight: 'ダークテーマ',
                 themeToggleDark: 'ライトテーマ',
                 missions: [
-                    'スコア200を達成',
-                    '20コインを集める',
-                    'レベル15をクリア'
-                ]
+                    'スコア300を達成',
+                    '30コインを集める',
+                    'レベル20をクリア'
+                ],
+                reward: '報酬'
             }
         };
 
         const missionsData = [
-            { id: 1, target: 200, reward: 50, progress: 0, completed: false },
-            { id: 2, target: 20, reward: 100, progress: 0, completed: false },
-            { id: 3, target: 15, reward: 150, progress: 0, completed: false }
+            { id: 1, target: 300, reward: 100, progress: 0, completed: false },
+            { id: 2, target: 30, reward: 200, progress: 0, completed: false },
+            { id: 3, target: 20, reward: 300, progress: 0, completed: false }
         ];
 
         function toggleTheme() {
@@ -315,9 +329,9 @@
             document.getElementById('gameTitle').textContent = t.gameTitle;
             document.getElementById('startButton').textContent = t.startButton;
             document.getElementById('shopButton').textContent = t.shopButton;
-            document.getElementById('missionsButton').textContent = худsButton.textContent = t.missionsButton;
+            document.getElementById('missionsButton').textContent = t.missionsButton;
             document.getElementById('shopTitle').textContent = t.shopTitle;
-            document.get levelDisplay').textContent = `${t.levelDisplay}: ${level}`;
+            document.getElementById('levelDisplay').textContent = `${t.levelDisplay}: ${level}`;
             document.getElementById('scoreDisplay').textContent = `${t.scoreDisplay}: ${score}`;
             document.getElementById('coinsDisplay').textContent = `${t.coinsDisplay}: ${coinsCollected}`;
             document.getElementById('coinsLabel').textContent = `${t.coinsLabel}: `;
@@ -335,11 +349,13 @@
             menu.style.display = 'none';
             player.y = canvas.height / 2;
             player.velocity = 0;
+            player.scale = 1;
             obstacles = [];
             coins = [];
             score = 0;
             level = 1;
-            gameSpeed = 3;
+            gameSpeed = 4;
+            frame = 0;
             updateDisplays();
             gameLoop();
         }
@@ -379,6 +395,7 @@
                 if (player.skin === skin.id) skinDiv.classList.add('selected');
                 const img = document.createElement('img');
                 img.src = skin.src;
+                img.onerror = () => { img.src = 'https://via.placeholder.com/50/CCCCCC'; }; // Fallback if image fails
                 skinDiv.appendChild(img);
                 const name = document.createElement('p');
                 name.textContent = skin.name;
@@ -433,22 +450,24 @@
         }
 
         function spawnObstacle() {
-            const baseGap = Math.max(120 - level * 2, 80);
-            const height = Math.random() * (canvas.height - baseGap - 100) + 50;
-            const width = 40 + level * 2;
+            const baseGap = Math.max(110 - level * 2.5, 70);
+            const height = Math.random() * (canvas.height - baseGap - 120) + 60;
+            const width = 40 + Math.random() * 20 + level * 3;
             obstacles.push({
                 x: canvas.width,
                 width: width,
                 topHeight: height,
-                bottomHeight: canvas.height - height - baseGap
+                bottomHeight: canvas.height - height - baseGap,
+                passed: false
             });
         }
 
         function spawnCoin() {
             coins.push({
                 x: canvas.width,
-                y: Math.random() * (canvas.height - 100) + 50,
-                radius: 10
+                y: Math.random() * (canvas.height - 120) + 60,
+                radius: 12,
+                angle: 0
             });
         }
 
@@ -464,38 +483,46 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Player movement
-            player.velocity += player.gravity * (1 + level * 0.01);
+            player.velocity += player.gravity * (1 + level * 0.015);
             player.y += player.velocity;
             if (player.y + player.radius > canvas.height || player.y - player.radius < 0) {
                 gameState = 'menu';
                 menu.style.display = 'block';
             }
 
+            // Player animation
+            if (player.scale > 1) player.scale -= 0.05;
+            if (player.scale < 1) player.scale = 1;
+
             // Draw player
             const skin = skins.find(s => s.id === player.skin);
             const img = new Image();
             img.src = skin.src;
+            img.onerror = () => { img.src = 'https://via.placeholder.com/50/CCCCCC'; };
             ctx.save();
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.arc(player.x, player.y, player.radius * player.scale, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(img, player.x - player.radius, player.y - player.radius, player.radius * 2, player.radius * 2);
+            ctx.drawImage(img, player.x - player.radius * player.scale, player.y - player.radius * player.scale, player.radius * 2 * player.scale, player.radius * 2 * player.scale);
             ctx.restore();
 
             // Obstacles
-            const obstacleFrequency = Math.max(80 - level * 2, 50);
+            const obstacleFrequency = Math.max(70 - level * 2, 40);
             if (frame % obstacleFrequency === 0) spawnObstacle();
             obstacles.forEach(obstacle => {
                 obstacle.x -= gameSpeed;
-                ctx.fillStyle = theme === 'light' ? '#388E3C' : '#4CAF50';
+                const gradient = ctx.createLinearGradient(obstacle.x, 0, obstacle.x + obstacle.width, 0);
+                gradient.addColorStop(0, theme === 'light' ? '#2E7D32' : '#4CAF50');
+                gradient.addColorStop(1, theme === 'light' ? '#4CAF50' : '#66BB6A');
+                ctx.fillStyle = gradient;
                 ctx.fillRect(obstacle.x, 0, obstacle.width, obstacle.topHeight);
                 ctx.fillRect(obstacle.x, canvas.height - obstacle.bottomHeight, obstacle.width, obstacle.bottomHeight);
 
                 // Collision detection
                 if (
-                    player.x + player.radius > obstacle.x &&
-                    player.x - player.radius < obstacle.x + obstacle.width &&
-                    (player.y - player.radius < obstacle.topHeight || player.y + player.radius > canvas.height - obstacle.bottomHeight)
+                    player.x + player.radius * player.scale > obstacle.x &&
+                    player.x - player.radius * player.scale < obstacle.x + obstacle.width &&
+                    (player.y - player.radius * player.scale < obstacle.topHeight || player.y + player.radius * player.scale > canvas.height - obstacle.bottomHeight)
                 ) {
                     gameState = 'menu';
                     menu.style.display = 'block';
@@ -504,9 +531,9 @@
                 if (obstacle.x + obstacle.width < player.x && !obstacle.passed) {
                     score += 10;
                     obstacle.passed = true;
-                    if (score % 100 === 0 && level < maxLevel) {
+                    if (score % 80 === 0 && level < maxLevel) {
                         level++;
-                        gameSpeed += 0.3;
+                        gameSpeed += 0.4;
                     }
                     updateDisplays();
                 }
@@ -514,19 +541,28 @@
             obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
 
             // Coins
-            if (frame % 120 === 0) spawnCoin();
+            const coinFrequency = Math.max(100 - level * 2, 60);
+            if (frame % coinFrequency === 0) spawnCoin();
             coins.forEach(coin => {
                 coin.x -= gameSpeed;
-                ctx.fillStyle = '#FFD700';
+                coin.angle += 0.1;
+                ctx.save();
+                ctx.translate(coin.x, coin.y);
+                ctx.rotate(coin.angle);
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coin.radius);
+                gradient.addColorStop(0, '#FFF176');
+                gradient.addColorStop(1, '#FBC02D');
+                ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
 
                 // Coin collection
                 if (
-                    Math.hypot(player.x - coin.x, player.y - coin.y) < player.radius + coin.radius
+                    Math.hypot(player.x - coin.x, player.y - coin.y) < player.radius * player.scale + coin.radius
                 ) {
-                    coinsCollected += 1 + Math.floor(level / 10);
+                    coinsCollected += 2 + Math.floor(level / 5);
                     coins = coins.filter(c => c !== coin);
                     updateDisplays();
                 }
@@ -544,6 +580,7 @@
             e.preventDefault();
             if (gameState === 'playing') {
                 player.velocity = player.jump;
+                player.scale = 1.2;
             }
         });
 
