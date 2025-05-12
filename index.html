@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flappy Circle</title>
+    <title>Geo Dash</title>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body {
@@ -97,7 +97,7 @@
         .skin img {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
+            border-radius: 8px;
             border: 2px solid transparent;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
@@ -194,7 +194,7 @@
     <div class="wallet-button" id="ton-connect"></div>
     <canvas id="gameCanvas" width="360" height="640"></canvas>
     <div id="menu">
-        <h1 id="gameTitle">Flappy Circle</h1>
+        <h1 id="gameTitle">Geo Dash</h1>
         <button id="startButton" onclick="startGame()">Start Game</button>
         <button id="shopButton" onclick="openShop()">Shop</button>
         <button id="missionsButton" onclick="openMissions()">Missions</button>
@@ -261,16 +261,17 @@
 
         let player = {
             x: 80,
-            y: 0,
-            radius: 20,
+            y: 400,
+            size: 30,
             velocity: 0,
-            gravity: 0.3,
+            gravity: 0.4,
             jump: -15,
             skin: 'skin1',
             scale: 1
         };
 
-        let obstacles = [];
+        let platforms = [];
+        let spikes = [];
         let coins = [];
         let score = 0;
         let bestScore = 0;
@@ -306,7 +307,7 @@
 
         const translations = {
             en: {
-                gameTitle: 'Flappy Circle',
+                gameTitle: 'Geo Dash',
                 startButton: 'Start Game',
                 shopButton: 'Shop',
                 missionsButton: 'Missions',
@@ -350,7 +351,7 @@
                 noTickets: 'No tickets! Claim more or wait.'
             },
             ru: {
-                gameTitle: 'Летающий Круг',
+                gameTitle: 'Гео Даш',
                 startButton: 'Начать Игру',
                 shopButton: 'Магазин',
                 missionsButton: 'Миссии',
@@ -394,7 +395,7 @@
                 noTickets: 'Нет билетиков! Получи больше или жди.'
             },
             ja: {
-                gameTitle: 'フラッピーサークル',
+                gameTitle: 'ジオダッシュ',
                 startButton: 'ゲーム開始',
                 shopButton: 'ショップ',
                 missionsButton: 'ミッション',
@@ -447,7 +448,7 @@
 
         // Load game state
         function loadGame() {
-            const savedState = localStorage.getItem('flappyCircleState');
+            const savedState = localStorage.getItem('geoDashState');
             if (savedState) {
                 try {
                     const parsed = JSON.parse(savedState);
@@ -485,7 +486,7 @@
                 playerSkin: player.skin,
                 skins: skins.map(skin => ({ id: skin.id, owned: skin.owned }))
             };
-            localStorage.setItem('flappyCircleState', JSON.stringify(state));
+            localStorage.setItem('geoDashState', JSON.stringify(state));
         }
 
         // Show notification
@@ -611,16 +612,17 @@
             menu.style.display = 'none';
             gameOver.style.display = 'none';
             player.x = 80;
-            player.y = canvas.height / 2;
+            player.y = 400;
             player.velocity = 0;
             player.scale = 1;
-            obstacles = [];
+            platforms = [{ x: 0, y: 450, width: 360, height: 190 }];
+            spikes = [];
             coins = [];
             score = 0;
             level = 1;
             gameSpeed = 4;
             frame = 0;
-            startDelay = 120; // 2 seconds delay
+            startDelay = 120;
             updateDisplays();
             saveGame();
             gameLoop();
@@ -739,23 +741,33 @@
             saveGame();
         }
 
-        function spawnObstacle() {
-            const baseGap = Math.max(170 - level * 0.3, 130);
-            const height = Math.random() * (canvas.height - baseGap - 120) + 60;
-            const width = 40 + Math.random() * 20 + level * 3;
-            obstacles.push({
-                x: canvas.width,
-                width: width,
-                topHeight: height,
-                bottomHeight: canvas.height - height - baseGap,
-                passed: false
+        function spawnPlatform() {
+            const lastPlatform = platforms[platforms.length - 1];
+            const platformWidth = Math.max(100 - level * 0.5, 50);
+            const gap = 50 + level * 0.5;
+            const height = Math.random() * 100 + 350; // y from 350 to 450
+            platforms.push({
+                x: lastPlatform.x + lastPlatform.width + gap,
+                y: height,
+                width: platformWidth,
+                height: 640 - height
+            });
+        }
+
+        function spawnSpike() {
+            const lastPlatform = platforms[platforms.length - 1];
+            spikes.push({
+                x: lastPlatform.x + lastPlatform.width - 20,
+                y: lastPlatform.y - 20,
+                size: 20
             });
         }
 
         function spawnCoin() {
+            const lastPlatform = platforms[platforms.length - 1];
             coins.push({
-                x: canvas.width,
-                y: Math.random() * (canvas.height - 120) + 60,
+                x: lastPlatform.x + lastPlatform.width - 40,
+                y: lastPlatform.y - 40,
                 radius: 12,
                 angle: 0
             });
@@ -782,12 +794,16 @@
             // Player movement
             player.velocity += player.gravity;
             player.y += player.velocity;
-            if (player.y + player.radius > canvas.height || player.y - player.radius < 0) {
+            player.x += gameSpeed;
+
+            // Check if player falls or hits ceiling
+            if (player.y + player.size > canvas.height || player.y < 0) {
                 if (score > bestScore) bestScore = score;
                 gameState = 'gameOver';
                 gameOver.style.display = 'block';
                 updateDisplays();
                 saveGame();
+                return;
             }
 
             // Player animation
@@ -799,52 +815,70 @@
             const img = skinImages[skin.id];
             ctx.save();
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius * player.scale, 0, Math.PI * 2);
+            ctx.rect(player.x, player.y, player.size * player.scale, player.size * player.scale);
             ctx.clip();
             if (img.complete && img.naturalWidth > 0 && !img.failed) {
-                ctx.drawImage(img, player.x - player.radius * player.scale, player.y - player.radius * player.scale, player.radius * 2 * player.scale, player.radius * 2 * player.scale);
+                ctx.drawImage(img, player.x, player.y, player.size * player.scale, player.size * player.scale);
             } else {
                 ctx.fillStyle = skin.color;
-                ctx.fill();
+                ctx.fillRect(player.x, player.y, player.size * player.scale, player.size * player.scale);
             }
             ctx.restore();
 
-            // Obstacles
-            const obstacleFrequency = Math.max(120 - level * 0.3, 90);
-            if (startDelay <= 0 && frame % obstacleFrequency === 0) spawnObstacle();
-            obstacles.forEach(obstacle => {
-                obstacle.x -= gameSpeed;
-                const gradient = ctx.createLinearGradient(obstacle.x, 0, obstacle.x + obstacle.width, 0);
-                gradient.addColorStop(0, theme === 'light' ? '#2E7D32' : '#4CAF50');
-                gradient.addColorStop(1, theme === 'light' ? '#4CAF50' : '#66BB6A');
+            // Platforms
+            const platformFrequency = 60;
+            if (startDelay <= 0 && frame % platformFrequency === 0) spawnPlatform();
+            platforms.forEach(platform => {
+                platform.x -= gameSpeed;
+                const gradient = ctx.createLinearGradient(platform.x, platform.y, platform.x, platform.y + platform.height);
+                gradient.addColorStop(0, theme === 'light' ? '#4CAF50' : '#388E3C');
+                gradient.addColorStop(1, theme === 'light' ? '#2E7D32' : '#4CAF50');
                 ctx.fillStyle = gradient;
-                ctx.fillRect(obstacle.x, 0, obstacle.width, obstacle.topHeight);
-                ctx.fillRect(obstacle.x, canvas.height - obstacle.bottomHeight, obstacle.width, obstacle.bottomHeight);
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+
+                // Landing detection
+                if (
+                    player.x + player.size > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.size > platform.y &&
+                    player.y + player.size < platform.y + 10 &&
+                    player.velocity > 0
+                ) {
+                    player.y = platform.y - player.size;
+                    player.velocity = 0;
+                }
+            });
+            platforms = platforms.filter(platform => platform.x + platform.width > 0);
+
+            // Spikes
+            const spikeFrequency = Math.max(120 - level * 2, 60);
+            if (startDelay <= 0 && frame % spikeFrequency === 0 && Math.random() > 0.5) spawnSpike();
+            spikes.forEach(spike => {
+                spike.x -= gameSpeed;
+                ctx.fillStyle = theme === 'light' ? '#F44336' : '#D32F2F';
+                ctx.beginPath();
+                ctx.moveTo(spike.x, spike.y + spike.size);
+                ctx.lineTo(spike.x + spike.size, spike.y + spike.size);
+                ctx.lineTo(spike.x + spike.size / 2, spike.y);
+                ctx.closePath();
+                ctx.fill();
 
                 // Collision detection
                 if (
-                    player.x + player.radius * player.scale > obstacle.x &&
-                    player.x - player.radius * player.scale < obstacle.x + obstacle.width &&
-                    (player.y - player.radius * player.scale < obstacle.topHeight || player.y + player.radius * player.scale > canvas.height - obstacle.bottomHeight)
+                    player.x + player.size > spike.x &&
+                    player.x < spike.x + spike.size &&
+                    player.y + player.size > spike.y &&
+                    player.y < spike.y + spike.size
                 ) {
                     if (score > bestScore) bestScore = score;
                     gameState = 'gameOver';
                     gameOver.style.display = 'block';
                     updateDisplays();
                     saveGame();
-                }
-
-                if (obstacle.x + obstacle.width < player.x && !obstacle.passed) {
-                    score += 10;
-                    obstacle.passed = true;
-                    if (score % 80 === 0 && level < maxLevel) {
-                        level++;
-                        gameSpeed += 0.03;
-                    }
-                    updateDisplays();
+                    return;
                 }
             });
-            obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+            spikes = spikes.filter(spike => spike.x + spike.size > 0);
 
             // Coins
             const coinFrequency = Math.max(100 - level * 2, 60);
@@ -866,7 +900,7 @@
 
                 // Coin collection
                 if (
-                    Math.hypot(player.x - coin.x, player.y - coin.y) < player.radius * player.scale + coin.radius
+                    Math.hypot(player.x + player.size / 2 - coin.x, player.y + player.size / 2 - coin.y) < player.size / 2 + coin.radius
                 ) {
                     coinsCollected += 2 + Math.floor(level / 5);
                     navigator.vibrate?.(50);
@@ -877,8 +911,16 @@
             });
             coins = coins.filter(coin => coin.x + coin.radius > 0);
 
+            // Score and level
+            score += Math.floor(gameSpeed / 2);
+            if (score % 100 === 0 && level < maxLevel) {
+                level++;
+                gameSpeed += 0.03;
+            }
+
             // Update missions
             updateMissions();
+            updateDisplays();
 
             if (startDelay > 0) startDelay--;
             frame++;
@@ -887,7 +929,7 @@
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (gameState === 'playing') {
+            if (gameState === 'playing' && player.velocity === 0) {
                 player.velocity = player.jump;
                 player.scale = 1.2;
                 navigator.vibrate?.(50);
