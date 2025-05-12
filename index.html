@@ -453,11 +453,11 @@
                 try {
                     const parsed = JSON.parse(savedState);
                     coinsCollected = parsed.coinsCollected || 0;
-                    tickets = parsed.tickets || 0;
+                    tickets = parsed.tickets || 3; // Default to 3 tickets if saved state exists
                     bestScore = parsed.bestScore || 0;
                     lastTicketClaimTime = parsed.lastTicketClaimTime || 0;
                     if (tickets > 1000) {
-                        tickets = 0;
+                        tickets = 3; // Reset to 3 tickets on overflow
                         lastTicketClaimTime = Date.now();
                         showNotification(translations[language].ticketsReset);
                     }
@@ -471,6 +471,8 @@
                 } catch (e) {
                     resetProgress();
                 }
+            } else {
+                tickets = 3; // Default to 3 tickets for new game
             }
             updateClaimButton();
             updateStartButton();
@@ -545,7 +547,7 @@
         // Reset progress
         function resetProgress() {
             coinsCollected = 0;
-            tickets = 0;
+            tickets = 3; // Set to 3 tickets on reset
             bestScore = 0;
             lastTicketClaimTime = Date.now();
             player.skin = 'skin1';
