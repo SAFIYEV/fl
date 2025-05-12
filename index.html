@@ -194,7 +194,7 @@
     <div class="wallet-button" id="ton-connect"></div>
     <canvas id="gameCanvas" width="360" height="640"></canvas>
     <div id="menu">
-        <h1 id="gameTitle">SOKO Dash</h1>
+        <h1 id="gameTitle">Geo Dash</h1>
         <button id="startButton" onclick="startGame()">Start Game</button>
         <button id="shopButton" onclick="openShop()">Shop</button>
         <button id="missionsButton" onclick="openMissions()">Missions</button>
@@ -261,7 +261,7 @@
 
         let player = {
             x: 80,
-            y: 400,
+            y: 580 - 30, // Ground level minus player size
             size: 30,
             velocity: 0,
             gravity: 0.4,
@@ -270,7 +270,6 @@
             scale: 1
         };
 
-        let platforms = [];
         let spikes = [];
         let coins = [];
         let score = 0;
@@ -286,6 +285,7 @@
         let theme = 'light';
         let language = 'en';
         let startDelay = 120; // 2 seconds at 60 FPS
+        const groundY = 580;
 
         const skins = [
             { id: 'skin1', src: 'skin1.png', price: 0, owned: true, name: 'Default', color: '#FF5722' },
@@ -453,11 +453,11 @@
                 try {
                     const parsed = JSON.parse(savedState);
                     coinsCollected = parsed.coinsCollected || 0;
-                    tickets = parsed.tickets || 3; // Default to 3 tickets if saved state exists
+                    tickets = parsed.tickets || 3;
                     bestScore = parsed.bestScore || 0;
                     lastTicketClaimTime = parsed.lastTicketClaimTime || 0;
                     if (tickets > 1000) {
-                        tickets = 3; // Reset to 3 tickets on overflow
+                        tickets = 3;
                         lastTicketClaimTime = Date.now();
                         showNotification(translations[language].ticketsReset);
                     }
@@ -472,7 +472,7 @@
                     resetProgress();
                 }
             } else {
-                tickets = 3; // Default to 3 tickets for new game
+                tickets = 3;
             }
             updateClaimButton();
             updateStartButton();
@@ -547,7 +547,7 @@
         // Reset progress
         function resetProgress() {
             coinsCollected = 0;
-            tickets = 3; // Set to 3 tickets on reset
+            tickets = 3;
             bestScore = 0;
             lastTicketClaimTime = Date.now();
             player.skin = 'skin1';
@@ -614,10 +614,9 @@
             menu.style.display = 'none';
             gameOver.style.display = 'none';
             player.x = 80;
-            player.y = 400;
+            player.y = groundY - player.size;
             player.velocity = 0;
             player.scale = 1;
-            platforms = [{ x: 0, y: 450, width: 360, height: 190 }];
             spikes = [];
             coins = [];
             score = 0;
@@ -743,33 +742,18 @@
             saveGame();
         }
 
-        function spawnPlatform() {
-            const lastPlatform = platforms[platforms.length - 1];
-            const platformWidth = Math.max(100 - level * 0.5, 50);
-            const gap = 50 + level * 0.5;
-            const height = Math.random() * 100 + 350; // y from 350 to 450
-            platforms.push({
-                x: lastPlatform.x + lastPlatform.width + gap,
-                y: height,
-                width: platformWidth,
-                height: 640 - height
-            });
-        }
-
         function spawnSpike() {
-            const lastPlatform = platforms[platforms.length - 1];
             spikes.push({
-                x: lastPlatform.x + lastPlatform.width - 20,
-                y: lastPlatform.y - 20,
+                x: canvas.width,
+                y: groundY - 20,
                 size: 20
             });
         }
 
         function spawnCoin() {
-            const lastPlatform = platforms[platforms.length - 1];
             coins.push({
-                x: lastPlatform.x + lastPlatform.width - 40,
-                y: lastPlatform.y - 40,
+                x: canvas.width,
+                y: groundY - (Math.random() * 40 + 40), // y between 500 and 540
                 radius: 12,
                 angle: 0
             });
@@ -785,7 +769,7 @@
             document.getElementById('finalLevel').textContent = `${translations[language].finalLevel}: ${level}`;
             document.getElementById('earnedCoins').textContent = `${translations[language].earnedCoins}: ${coinsCollected}`;
             document.getElementById('remainingTickets').textContent = `${translations[language].remainingTickets}: ${tickets}`;
-            balanceLabel.textContent = `${translations[language].balanceLabel}: ${coinsCollected} ${translations[language].coinsLabel}`;
+            balanceLabel.textContent = `${translations[language].balanceLabel}: ${coinsCollected} ${t.coinsLabel}`;
         }
 
         function gameLoop() {
@@ -793,13 +777,26 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw ground
+            const groundGradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+            groundGradient.addColorStop(0, theme === 'light' ? '#4CAF50' : '#388E3C');
+            groundGradient.addColorStop(1, theme === 'light' ? '#2E7D32' : '#4CAF50');
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
             // Player movement
             player.velocity += player.gravity;
             player.y += player.velocity;
             player.x += gameSpeed;
 
-            // Check if player falls or hits ceiling
-            if (player.y + player.size > canvas.height || player.y < 0) {
+            // Keep player on ground
+            if (player.y + player.size > groundY) {
+                player.y = groundY - player.size;
+                player.velocity = 0;
+            }
+
+            // Check if player goes off-screen
+            if (player.x < -player.size) {
                 if (score > bestScore) bestScore = score;
                 gameState = 'gameOver';
                 gameOver.style.display = 'block';
@@ -827,34 +824,9 @@
             }
             ctx.restore();
 
-            // Platforms
-            const platformFrequency = 60;
-            if (startDelay <= 0 && frame % platformFrequency === 0) spawnPlatform();
-            platforms.forEach(platform => {
-                platform.x -= gameSpeed;
-                const gradient = ctx.createLinearGradient(platform.x, platform.y, platform.x, platform.y + platform.height);
-                gradient.addColorStop(0, theme === 'light' ? '#4CAF50' : '#388E3C');
-                gradient.addColorStop(1, theme === 'light' ? '#2E7D32' : '#4CAF50');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-
-                // Landing detection
-                if (
-                    player.x + player.size > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.y + player.size > platform.y &&
-                    player.y + player.size < platform.y + 10 &&
-                    player.velocity > 0
-                ) {
-                    player.y = platform.y - player.size;
-                    player.velocity = 0;
-                }
-            });
-            platforms = platforms.filter(platform => platform.x + platform.width > 0);
-
             // Spikes
             const spikeFrequency = Math.max(120 - level * 2, 60);
-            if (startDelay <= 0 && frame % spikeFrequency === 0 && Math.random() > 0.5) spawnSpike();
+            if (startDelay <= 0 && frame % spikeFrequency === 0 && Math.random() > 0.3) spawnSpike();
             spikes.forEach(spike => {
                 spike.x -= gameSpeed;
                 ctx.fillStyle = theme === 'light' ? '#F44336' : '#D32F2F';
@@ -931,7 +903,7 @@
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (gameState === 'playing' && player.velocity === 0) {
+            if (gameState === 'playing' && player.y + player.size >= groundY) {
                 player.velocity = player.jump;
                 player.scale = 1.2;
                 navigator.vibrate?.(50);
